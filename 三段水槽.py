@@ -47,7 +47,6 @@ class brain:
 		state_next = self.digitize_state(observation_next)
 		Max_Q_next = max(self.q_table[state_next])
 		self.q_table[state, action] = self.q_table[state, action] + alpha * (reward + gamma * Max_Q_next - self.q_table[state, action])
-		print(self.q_table)
  
 	def decide_action(self, observation, episode):
 		state = self.digitize_state(observation)
@@ -69,20 +68,34 @@ class Environment:
 	def run(self):
 		os.chdir("C:/Users/30043376/Documents/SandansuisouAPI")# ! delete later 
 
-		for episode in range(200):
+		for episode in range(1):
 			reward = 0
 			value = 10
 			num_episode = 0
 
-			os.system("read.bat")#csvからデータを初期化する
-			with open ('readitems.csv','r') as observation:
-				observation = csv.reader(observation)
-				for i,rows in enumerate(observation):
-					if i ==1:
-						observation = rows
-			observation = list(map(float,observation))
+			while(True):
+				os.system("read.bat")#csvからデータを初期化する
+				with open ('readitems.csv','r') as observation:
+					observation = csv.reader(observation)
+					for i,rows in enumerate(observation):
+						if i ==1:
+							observation = rows
+				observation = list(map(float,observation))
+				if observation[0] > 5:# ! 修正
+					break
+				time.sleep(1)
+
+			episode_str = str(episode+1)
+			filename = 'data'+ episode_str + '.csv'
+			with open(filename,"w",newline='') as csvfile:
+				data = csv.writer(csvfile)
+				data.writerow(["LI001","LI002","LI003","FI001","FI002","V001"])
 
 			for step in range(200):
+
+				with open(filename,"a",newline='') as csvfile:
+					data = csv.writer(csvfile)
+					data.writerows([observation])
 
 				action = self.agent.get_action(observation, episode)
 				value_next = value + action
@@ -91,12 +104,12 @@ class Environment:
 				value = value_next#value更新
 
 				if observation[0] > 45 and observation[0] < 55:
-					reward = 10
+					reward = 1
 					num_episode +=1
 				else:
 					reward = -1 
 
-				time.sleep(1)
+				time.sleep(0.01)
 
 				os.system("read.bat")
 				with open ('readitems.csv','r') as observation_next:
@@ -109,16 +122,54 @@ class Environment:
 				self.agent.update_q_function(observation, action, reward, observation_next)
 				observation = observation_next
 
-				print('action:')
-				print(action)
-				print('value:')
-				print(value)
-				print('observation:')
-				print(observation)
-
 			if num_episode >= 180:
 				print("学習成功")
 				break
 
+		print("学習評価を行います")
+
+		value = 10
+		while(True):
+			os.system("read.bat")#csvからデータを初期化する
+			with open ('readitems.csv','r') as observation:
+				observation = csv.reader(observation)
+				for i,rows in enumerate(observation):
+					if i ==1:
+						observation = rows
+			observation = list(map(float,observation))
+			if observation[0] > 5:
+				break
+			time.sleep(1)
+
+		with open("test.csv","w",newline='') as csvfile:
+			data = csv.writer(csvfile)
+			data.writerow(["LI001","LI002","LI003","FI001","FI002","V001"])
+
+		for step in range(200):
+
+			with open("test.csv","a",newline='') as csvfile:
+				data = csv.writer(csvfile)
+				data.writerows([observation])
+
+			action = self.agent.get_action(observation, episode)
+			value_next = value + action
+			write_bat = open("write.bat",'w')
+			write_bat.write('call SandanSuisouAPI.exe -cmd w -value %d' % value_next)
+			value = value_next
+
+			time.sleep(0.01)
+
+			os.system("read.bat")
+			with open ('readitems.csv','r') as observation_next:
+				observation_next = csv.reader(observation_next)
+				for i,rows in enumerate(observation_next):
+					if i ==1:
+						observation_next = rows
+			observation_next = list(map(float,observation_next))
+
+			observation = observation_next
+
+
 SandanSuisou = Environment()
 SandanSuisou.run()
+
